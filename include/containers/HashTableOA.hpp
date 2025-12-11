@@ -185,7 +185,8 @@ class HashTableOA {
             throw std::runtime_error("Cannot open file for writing");
         }
 
-        file << size << " " << capacity << " " << a << " " << b << " " << p << "\n";
+        file << size << " " << capacity << " "
+            << a << " " << b << " " << p << "\n";
 
         for (size_t i = 0; i < capacity; i++) {
             if (table[i].isOccupied && !table[i].isDeleted) {

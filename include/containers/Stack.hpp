@@ -174,7 +174,8 @@ class Stack {
             }
 
             for (int i = size - 1; i >= 0; --i) {
-                file.write(reinterpret_cast<const char*>(&elements[i]), sizeof(T));
+                file.write(reinterpret_cast<const char*>(&elements[i])
+                    , sizeof(T));
             }
             delete[] elements;
         }
