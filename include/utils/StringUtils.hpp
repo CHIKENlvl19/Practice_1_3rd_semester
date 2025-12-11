@@ -23,6 +23,36 @@ class StringUtils {
         return tokens;
     }
 
+    // Разбить строку с учетом кавычек
+    static std::vector<std::string> splitWithQuotes(const std::string& str) {
+        std::vector<std::string> result;
+        std::string current;
+        bool inQuotes = false;
+
+        for (size_t i = 0; i < str.length(); ++i) {
+            char c = str[i];
+
+            if (c == '"' || c == '\'') {
+                inQuotes = !inQuotes;
+                // Не добавляем саму кавычку
+            } else if (c == ' ' && !inQuotes) {
+                if (!current.empty()) {
+                    result.push_back(current);
+                    current.clear();
+                }
+            } else {
+                current += c;
+            }
+        }
+
+        if (!current.empty()) {
+            result.push_back(current);
+        }
+
+        return result;
+    }
+
+
     // Разбить строку по разделителю и вернуть вектор
     static std::vector<std::string> splitByPipe(const std::string& str) {
         return split(str, '|');
