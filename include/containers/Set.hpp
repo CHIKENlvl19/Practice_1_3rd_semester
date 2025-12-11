@@ -36,27 +36,10 @@ class Set {
 
     // сериализация в текстовом формате
     // формат: element1|element2|element3
-    std::string serialize() const {
-        std::stringstream ss;
-        bool first = true;
-
-        // проходим по всей таблице и выводим только занятые ячейки
-        for (size_t i = 0; i < table.getCapacity(); ++i) {
-            // нужно добавить публичный метод в HashTableOA для итерации
-        }
-
-        return ss.str();
-    }
-
-    void deserialize(const std::string& data) {
-        std::stringstream ss(data);
-        std::string element;
-
-        while (std::getline(ss, element, '|')) {
-            if (!element.empty()) {
-                insert(element);
-            }
-        }
+    void saveElementsToStream(std::ostream& out) const {
+        // Set использует HashTableOA внутри
+        // проходим по всем ключам хеш-таблицы
+        table.saveKeysToStream(out);
     }
 
  private:

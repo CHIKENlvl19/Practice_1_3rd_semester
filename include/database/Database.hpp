@@ -57,7 +57,7 @@ class Database {
         return dataTypeToString(dataType);
     }
 
-    // ===== SET ОПЕРАЦИИ =====
+    // SET ОПЕРАЦИИ
     void setAdd(const std::string& setName, const std::string& value) {
         if (dataType != DataType::STRING) {
             throw std::runtime_error("sAdd only works with STRING data type");
@@ -89,7 +89,7 @@ class Database {
         return it->second.contains(value);
     }
 
-    // ===== STACK ОПЕРАЦИИ =====
+    // STACK ОПЕРАЦИИ
     void stackPush(const std::string& stackName, const std::string& value) {
         if (dataType != DataType::STRING) {
             throw std::runtime_error("sPush only works with STRING data type");
@@ -114,7 +114,7 @@ class Database {
         return value;
     }
 
-    // ===== QUEUE ОПЕРАЦИИ =====
+    // QUEUE ОПЕРАЦИИ
     void queuePush(const std::string& queueName, const std::string& value) {
         if (dataType != DataType::STRING) {
             throw std::runtime_error("qPush only works with STRING data type");
@@ -139,7 +139,7 @@ class Database {
         return value;
     }
 
-    // ===== HASH ОПЕРАЦИИ =====
+    // HASH ОПЕРАЦИИ
     void hashSet(const std::string& hashName, const std::string& key, const std::string& value) {
         if (dataType != DataType::STRING) {
             throw std::runtime_error("hSet only works with STRING data type");
@@ -172,7 +172,7 @@ class Database {
         return it->second.find(key);
     }
 
-    // ===== ФАЙЛОВЫЕ ОПЕРАЦИИ =====
+    // ФАЙЛОВЫЕ ОПЕРАЦИИ
     void load() {
         std::ifstream file(filename);
         if (!file.is_open()) {
@@ -214,40 +214,42 @@ class Database {
             throw std::runtime_error("Cannot open file for writing: " + filename);
         }
 
+        // Заголовок файла
         file << "# СУБД Data File\n";
         file << "# Data Type: " << getDataTypeString() << "\n";
         file << "# Format: name:type|data\n\n";
 
-        // Сохраняем множества
-        for (const auto& [name, set] : sets) {
-            file << name << ":SET|";
-            // TODO: добавить итератор в Set
-            file << "\n";
-        }
-
         // Сохраняем хеш-таблицы
         for (const auto& [name, hash] : hashes) {
             file << name << ":HASH|";
-            hash.savePairsToStream(file);
+            hash.saveKeysToStream(file);
+            file << "\n";
+        }
+
+        // Сохраняем множества
+        for (const auto& [name, set] : sets) {
+            file << name << ":SET|";
+            set.saveElementsToStream(file);
             file << "\n";
         }
 
         // Сохраняем стеки
         for (const auto& [name, stack] : stacks) {
             file << name << ":STACK|";
-            // TODO: добавить метод для получения всех элементов
+            stack.saveElementsToStream(file);
             file << "\n";
         }
 
         // Сохраняем очереди
         for (const auto& [name, queue] : queues) {
             file << name << ":QUEUE|";
-            // TODO: добавить метод для получения всех элементов
+            queue.saveElementsToStream(file);
             file << "\n";
         }
 
         file.close();
     }
+
 
  private:
     std::string filename;
@@ -269,7 +271,12 @@ class Database {
     }
 
     void loadHash(const std::string& name, const std::string& data) {
-        hashes[name] = HashTableOA<std::string, std::string>(1000);
+        if (hashes.find(name) == hashes.end()) {
+            hashes.emplace(name, HashTableOA<std::string, std::string>(1000));
+        }
+
+        if (data.empty()) return;
+
         std::vector<std::string> pairs = StringUtils::split(data, '|');
         for (const auto& pair : pairs) {
             if (pair.empty()) continue;

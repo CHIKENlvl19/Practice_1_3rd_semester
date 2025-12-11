@@ -18,7 +18,7 @@ class CommandParser {
     explicit CommandParser(Database& db) : db(db) {}
 
     CommandResult execute(const std::string& query) {
-        std::vector<std::string> tokens = StringUtils::split(query);
+        std::vector<std::string> tokens = StringUtils::splitWithQuotes(query);
 
         if (tokens.empty()) {
             return {false, "", "Empty query"};
