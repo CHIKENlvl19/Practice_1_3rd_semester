@@ -23,7 +23,7 @@ class StringUtils {
         return tokens;
     }
 
-    // Разбить строку с учетом кавычек
+    // разбить строку с учетом кавычек
     static std::vector<std::string> splitWithQuotes(const std::string& str) {
         std::vector<std::string> result;
         std::string current;
