@@ -1,4 +1,3 @@
-// Copyright
 #include <iostream>
 #include <string>
 #include <cstring>
@@ -7,21 +6,59 @@
 
 using namespace std;
 
-void printMenu() {
-    cout << "\n=== NoSQL СУБД ===" << endl;
-    cout << "Выберите тип данных для БД:" << endl;
-    cout << "1. STRING (строки) - по умолчанию" << endl;
-    cout << "2. INTEGER (целые числа)" << endl;
-    cout << "3. FLOAT (вещественные числа)" << endl;
-    cout << endl;
+// типы данных
+enum class DataType {
+    STRING,
+    INTEGER,
+    FLOAT,
+    UNKNOWN
+};
+
+DataType stringToDataType(const std::string& str) {
+    std::string lower = str;
+    for (char& c : lower) c = std::tolower(c);
+
+    if (lower == "string") return DataType::STRING;
+    if (lower == "int" || lower == "integer") return DataType::INTEGER;
+    if (lower == "float" || lower == "double") return DataType::FLOAT;
+    return DataType::UNKNOWN;
+}
+
+std::string dataTypeToString(DataType type) {
+    switch (type) {
+        case DataType::STRING: return "STRING";
+        case DataType::INTEGER: return "INTEGER";
+        case DataType::FLOAT: return "FLOAT";
+        default: return "UNKNOWN";
+    }
+}
+
+// шаблонная функция для выполнения запроса
+template<typename T>
+void runQuery(const string& filename, const string& query) {
+    Database<T> db(filename);
+    db.load();
+
+    CommandParser<T> parser(db);
+    CommandResult result = parser.execute(query);
+
+    if (result.success) {
+        if (!result.output.empty()) {
+            cout << result.output << "\n";
+        }
+        db.save();
+    } else {
+        cerr << "Error: " << result.error << "\n";
+        throw runtime_error(result.error);
+    }
 }
 
 int main(int argc, char* argv[]) {
     string filename;
     string query;
-    string dataTypeStr = "";
+    string dataTypeStr = "string";  // по умолчанию STRING
 
-    // парсинг аргументов командной строки
+    // парсинг аргументов
     for (int i = 1; i < argc; ++i) {
         if (strcmp(argv[i], "--file") == 0 && i + 1 < argc) {
             filename = argv[++i];
@@ -32,89 +69,35 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // если нет файла и query - показать справку
+    // валидация
     if (filename.empty()) {
-        cout << "Usage: ./dbms --file <filename> --query '<command>' [--type <data_type>]\n";
-        cout << "\nДопустимые типы данных:\n";
-        cout << "  - string (по умолчанию)\n";
-        cout << "  - int / integer\n";
-        cout << "  - float / double\n";
-        cout << "\nПримеры:\n";
-        cout << "  ./dbms --file data.data --query 'HSET myhash key value'\n";
-        cout << "  ./dbms --file data.data --query 'HSET myhash key value' --type string\n";
-        cout << "  ./dbms --file data.data --query 'SADD myset element'\n";
+        cout << "Usage: ./dbms --file <filename> --query '<command>' [--type <type>]\n";
+        cout << "\nTypes: string (default), int, float\n";
+        cout << "\nExamples:\n";
+        cout << "  ./dbms --file data.data --query 'HSET users name Alice'\n";
+        cout << "  ./dbms --file nums.data --query 'HSET scores player1 100' --type int\n";
+        cout << "  ./dbms --file temps.data --query 'HSET metrics temp 36.6' --type float\n";
         return 1;
     }
 
-    // если файл существует, но нет query - интерактивный режим
     if (query.empty()) {
-        printMenu();
-        int choice;
-        cout << "Выберите (1-3): ";
-        cin >> choice;
-        cin.ignore();  // Очистить буфер ввода
-
-        DataType selectedType = DataType::STRING;
-        switch (choice) {
-            case 1: selectedType = DataType::STRING; break;
-            case 2: selectedType = DataType::INTEGER; break;
-            case 3: selectedType = DataType::FLOAT; break;
-            default:
-                cout << "Неверный выбор. Используется STRING по умолчанию.\n";
-                selectedType = DataType::STRING;
-        }
-
-        cout << "\nУспешно! Выбран тип: " << dataTypeToString(selectedType) << endl;
-        cout << "\nТеперь используйте: ./dbms --file " << filename << " --query '<command>' --type ";
-
-        switch (selectedType) {
-            case DataType::STRING: cout << "string"; break;
-            case DataType::INTEGER: cout << "int"; break;
-            case DataType::FLOAT: cout << "float"; break;
-            default: cout << "string";
-        }
-
-        cout << "\n\nПримеры команд:\n";
-        cout << "  HSET myhash key value    - добавить в хеш\n";
-        cout << "  HGET myhash key          - получить из хеша\n";
-        cout << "  HDEL myhash key          - удалить из хеша\n";
-        cout << "  SADD myset element       - добавить в множество\n";
-        cout << "  SREM myset element       - удалить из множества\n";
-        cout << "  SISMEMBER myset element  - проверить множество\n";
-        cout << "  SPUSH mystack item       - push в стек\n";
-        cout << "  SPOP mystack             - pop из стека\n";
-        cout << "  QPUSH myqueue elem       - push в очередь\n";
-        cout << "  QPOP myqueue             - pop из очереди\n";
-        return 0;
+        cerr << "Error: --query is required\n";
+        return 1;
     }
 
-    // определить тип данных
-    DataType dataType = DataType::STRING;  // по дефолту строка
-    if (!dataTypeStr.empty()) {
-        dataType = stringToDataType(dataTypeStr);
-        if (dataType == DataType::UNKNOWN) {
-            cerr << "Error: Unknown data type '" << dataTypeStr << "'\n";
-            cerr << "Допустимые типы: string, int, integer, float, double\n";
-            return 1;
-        }
-    }
+    DataType dataType = stringToDataType(dataTypeStr);
 
     try {
-        // инициализация БД с выбранным типом данных
-        Database db(filename, dataType);
-        db.load();
-
-        // парсинг и выполнение команды
-        CommandParser parser(db);
-        CommandResult result = parser.execute(query);
-
-        if (result.success) {
-            if (!result.output.empty()) {
-                cout << result.output << "\n";
-            }
-            db.save();
+        // выбираем тип базы данных в зависимости от --type
+        if (dataType == DataType::STRING) {
+            runQuery<std::string>(filename, query);
+        } else if (dataType == DataType::INTEGER) {
+            runQuery<int>(filename, query);
+        } else if (dataType == DataType::FLOAT) {
+            runQuery<float>(filename, query);
         } else {
-            cerr << "Error: " << result.error << "\n";
+            cerr << "Error: Unknown data type '" << dataTypeStr << "'\n";
+            cerr << "Valid types: string, int, float\n";
             return 1;
         }
     } catch (const exception& e) {

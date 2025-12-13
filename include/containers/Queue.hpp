@@ -5,6 +5,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <string>
+#include "../utils/StringUtils.hpp"
 
 template <typename T>
 class myQueue {
@@ -113,12 +114,11 @@ class myQueue {
     }
 
     void saveElementsToStream(std::ostream& out) const {
-        // от head к tail
         for (int i = 0; i < size; ++i) {
-            out << data[(head + i) % capacity] << "|";
+            int index = (head + i) % capacity;
+            out << StringUtils::toStringValue<T>(data[index]) << "|";
         }
     }
-
 
  private:
     T* data;

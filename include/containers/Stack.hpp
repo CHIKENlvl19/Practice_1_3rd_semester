@@ -6,6 +6,8 @@
 #include <stdexcept>
 #include <fstream>
 #include <string>
+#include "../utils/StringUtils.hpp"
+
 
 const int MAX_STACK_SIZE = 1000000;
 
@@ -103,26 +105,12 @@ class Stack {
     }
 
     void saveElementsToStream(std::ostream& out) const {
-        // сначала собираем все элементы в массив
-        if (size == 0) return;
-
-        std::string* elements = new std::string[size];
         Node* current = head;
-        int idx = 0;
-
         while (current != nullptr) {
-            elements[idx++] = current->value;
+            out << StringUtils::toStringValue<T>(current->value) << "|";
             current = current->next;
         }
-
-        // сохраняем в обратном порядке
-        for (int i = size - 1; i >= 0; --i) {
-            out << elements[i] << "|";
-        }
-
-        delete[] elements;
     }
-
 
  private:
     struct Node {

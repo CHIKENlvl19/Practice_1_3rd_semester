@@ -4,22 +4,20 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <stdexcept>
 
-// Утилита для парсинга команд
 class StringUtils {
  public:
-    // Разбить строку по разделителю
+    // разбить строку по разделителю
     static std::vector<std::string> split(const std::string& str, char delimiter = ' ') {
         std::vector<std::string> tokens;
         std::stringstream ss(str);
         std::string token;
-
         while (std::getline(ss, token, delimiter)) {
             if (!token.empty()) {
                 tokens.push_back(token);
             }
         }
-
         return tokens;
     }
 
@@ -31,10 +29,8 @@ class StringUtils {
 
         for (size_t i = 0; i < str.length(); ++i) {
             char c = str[i];
-
             if (c == '"' || c == '\'') {
                 inQuotes = !inQuotes;
-                // Не добавляем саму кавычку
             } else if (c == ' ' && !inQuotes) {
                 if (!current.empty()) {
                     result.push_back(current);
@@ -52,25 +48,6 @@ class StringUtils {
         return result;
     }
 
-
-    // Разбить строку по разделителю и вернуть вектор
-    static std::vector<std::string> splitByPipe(const std::string& str) {
-        return split(str, '|');
-    }
-
-    // Объединить вектор строк с разделителем
-    static std::string join(const std::vector<std::string>& tokens, char delimiter = '|') {
-        if (tokens.empty()) return "";
-
-        std::string result = tokens[0];
-        for (size_t i = 1; i < tokens.size(); ++i) {
-            result += delimiter;
-            result += tokens[i];
-        }
-        return result;
-    }
-
-    // Преобразовать строку в нижний регистр
     static std::string toLower(const std::string& str) {
         std::string result = str;
         for (char& c : result) {
@@ -79,26 +56,63 @@ class StringUtils {
         return result;
     }
 
-    // Trim пробелы слева
-    static std::string ltrim(const std::string& str) {
-        size_t start = 0;
-        while (start < str.length() && std::isspace(str[start])) {
-            ++start;
-        }
-        return str.substr(start);
-    }
 
-    // Trim пробелы справа
-    static std::string rtrim(const std::string& str) {
-        size_t end = str.length();
-        while (end > 0 && std::isspace(str[end - 1])) {
-            --end;
-        }
-        return str.substr(0, end);
-    }
+    // парсинг из строки в тип T
+    template<typename T>
+    static T parseValue(const std::string& s);
 
-    // Trim пробелы с обеих сторон
-    static std::string trim(const std::string& str) {
-        return rtrim(ltrim(str));
-    }
+    // преобразование типа T в строку
+    template<typename T>
+    static std::string toStringValue(const T& v);
 };
+
+// специализации для std::string
+template<>
+inline std::string StringUtils::parseValue<std::string>(const std::string& s) {
+    return s;
+}
+
+template<>
+inline std::string StringUtils::toStringValue<std::string>(const std::string& v) {
+    return v;
+}
+
+// специализации для int
+template<>
+inline int StringUtils::parseValue<int>(const std::string& s) {
+    try {
+        size_t pos = 0;
+        int v = std::stoi(s, &pos);
+        if (pos != s.size()) {
+            throw std::invalid_argument("extra characters after number");
+        }
+        return v;
+    } catch (const std::exception& e) {
+        throw std::runtime_error("Invalid integer: '" + s + "'");
+    }
+}
+
+template<>
+inline std::string StringUtils::toStringValue<int>(const int& v) {
+    return std::to_string(v);
+}
+
+// специализации для float
+template<>
+inline float StringUtils::parseValue<float>(const std::string& s) {
+    try {
+        size_t pos = 0;
+        float v = std::stof(s, &pos);
+        if (pos != s.size()) {
+            throw std::invalid_argument("extra characters after number");
+        }
+        return v;
+    } catch (const std::exception& e) {
+        throw std::runtime_error("Invalid float: '" + s + "'");
+    }
+}
+
+template<>
+inline std::string StringUtils::toStringValue<float>(const float& v) {
+    return std::to_string(v);
+}

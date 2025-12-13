@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sstream>
 #include "../containers/HashTableOA.hpp"
+#include "../utils/StringUtils.hpp"
 
 template <typename T>
 class Set {
@@ -34,11 +35,7 @@ class Set {
         table.print();
     }
 
-    // сериализация в текстовом формате
-    // формат: element1|element2|element3
     void saveElementsToStream(std::ostream& out) const {
-        // Set использует HashTableOA внутри
-        // проходим по всем ключам хеш-таблицы
         table.saveKeysToStream(out);
     }
 

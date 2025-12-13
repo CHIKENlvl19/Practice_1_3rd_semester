@@ -6,6 +6,7 @@
 #include <utility>
 #include <type_traits>
 #include <fstream>
+#include "../utils/StringUtils.hpp"
 
 template <typename Key, typename Value>
 class HashTableOA {
@@ -173,7 +174,16 @@ class HashTableOA {
     void saveKeysToStream(std::ostream& out) const {
         for (size_t i = 0; i < capacity; ++i) {
             if (table[i].isOccupied && !table[i].isDeleted) {
-                out << table[i].key << "|";  // только ключи
+                out << StringUtils::toStringValue<Key>(table[i].key) << "|";
+            }
+        }
+    }
+
+    void savePairsToStream(std::ostream& out) const {
+        for (size_t i = 0; i < capacity; ++i) {
+            if (table[i].isOccupied && !table[i].isDeleted) {
+                out << StringUtils::toStringValue<Key>(table[i].key) << ":"
+                    << StringUtils::toStringValue<Value>(table[i].value) << "|";
             }
         }
     }
@@ -206,7 +216,8 @@ class HashTableOA {
     size_t h1(const Key& key) const {
         uint64_t keyValue = 0;
 
-        if constexpr (std::is_integral_v<Key> || std::is_floating_point_v<Key>) {
+        if constexpr (std::is_integral_v<Key>
+                   || std::is_floating_point_v<Key>) {
             keyValue = static_cast<uint64_t>(key);
         } else {
             for (char c : key) {
